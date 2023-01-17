@@ -1,3 +1,5 @@
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 import shapefile as sf
@@ -7,12 +9,15 @@ from modelo import Modelo
 
 
 class Geografía(object):
-    def __init__(símismo, archivo: str, país: str):
-        símismo.forma = sf.Reader(archivo)
+    def __init__(símismo, archivo: str, país: str, columna_región: str, traslado_nombres=None, args_shp=None):
+        símismo.forma = sf.Reader(archivo, **(args_shp or {}))
         símismo.país = país
+        símismo.columna_región = columna_región
+        símismo.traslado_nombres = traslado_nombres or {}
 
-    def dibujar(símismo, modelo: Modelo, llenar=True, alpha=1):
-        fig, eje = plt.plot(figsize=(12, 6))
+    def dibujar(símismo, modelo: Modelo, colores=None, llenar=True, alpha=1):
+        fig, eje = plt.subplots(1, 1, figsize=(8, 6))
+        eje.set_aspect('equal', 'box')
 
         traza = modelo.obt_traza_por_categoría(símismo.país)
         vals_por_región = traza.mean()
@@ -23,7 +28,7 @@ class Geografía(object):
 
         vals_norm = (vals_por_región - escala[0]) / (escala[1] - escala[0])
 
-        escala_colores = símismo._resolver_colores()
+        escala_colores = símismo._resolver_colores(colores)
         d_clrs = _gen_d_mapacolores(colores=escala_colores)
 
         mapa_color = colors.LinearSegmentedColormap('mapa_color', d_clrs)
@@ -34,9 +39,21 @@ class Geografía(object):
         v_cols = mapa_color(vals_norm)
         v_cols[np.isnan(vals_norm)] = 1
 
-        for i, frm in enumerate(símismo.forma.shapes()):
+        for rgn, frm in zip(símismo.forma.records(fields=[símismo.columna_región]), símismo.forma.shapes()):
             puntos = frm.points
             partes = frm.parts
+
+            rgn = rgn[símismo.columna_región]
+            try:
+                rgn_final = símismo.traslado_nombres[rgn]
+            except KeyError:
+                rgn_final = rgn
+
+            try:
+                i_rgn = vals_norm.index.values.tolist().index(rgn_final)
+            except ValueError:
+                warnings.warn(f"Región {rgn_final} no encontrada en los datos.")
+                continue
 
             for ip, i0 in enumerate(partes):  # Para cada parte de la imagen
 
@@ -52,12 +69,13 @@ class Geografía(object):
                     x_lon[j] = seg[j][0]
                     y_lat[j] = seg[j][1]
 
-                clr = v_cols[i] if isinstance(v_cols, np.ndarray) else v_cols
+                clr = v_cols[i_rgn] if isinstance(v_cols, np.ndarray) else v_cols
                 if llenar:
                     eje.fill(x_lon, y_lat, color=clr, alpha=alpha)
                 else:
                     eje.plot(x_lon, y_lat, color=clr, alpha=alpha)
         fig.colorbar(cpick, ax=eje)
+        fig.savefig(modelo.archivo_gráfico(país=símismo.país, tipo="geog"))
 
     @staticmethod
     def _resolver_colores(colores=None):

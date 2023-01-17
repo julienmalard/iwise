@@ -32,7 +32,28 @@ def preparar_config():
     return ConfigDatos(datos_pd, dir_egreso=DIR_EGRESO, col_país=COL_PAÍS, col_región=COL_REGIÓN)
 
 
-Guatemala = Geografía(os.path.join("geografía", "mapas", "departamentos_gtm_fin"), "Guatemala")
+Guatemala = Geografía(
+    os.path.join("geografía", "mapas", "guatemala", "departamentos_gtm_fin"),
+    país="Guatemala",
+    columna_región="FIRST_DEPA",
+    args_shp={"encoding": "latin-1"}
+)
+
+# https://data.humdata.org/dataset/cod-ab-hnd
+Honduras = Geografía(
+    os.path.join("geografía", "mapas", "honduras", "hnd_admbnda_adm1_sinit_20161005"),
+    país="Honduras",
+    columna_región="ADM1_ES",
+    traslado_nombres={
+        "Atlantida": "Atlántida",
+        "Cortes": "Cortés",
+        # "Santa Barbara": "",
+        "Copan": "Copán",
+        "Intibuca": "Intibucá",
+        # "Francisco Morazan": "",
+        # "El Paraiso": ""
+    }
+)
 
 if __name__ == "__main__":
     config = preparar_config()
@@ -40,7 +61,8 @@ if __name__ == "__main__":
     # ModeloRegional("Género", var_y=COL_SEGGHÍD, var_x="WP1219", config=config).dibujar()
 
     modelo = Modelo("Región", var_y=COL_SEGGHÍD, var_x=COL_REGIÓN, config=config).dibujar()
-    Guatemala.dibujar(modelo)
+    Guatemala.dibujar(modelo, colores=-1)
+    Honduras.dibujar(modelo, colores=-1)
 
     Modelo("Género", var_y=COL_SEGGHÍD, var_x="WP1219", config=config).dibujar()
 

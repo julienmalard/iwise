@@ -47,6 +47,7 @@ class Modelo(object):
             traza = pm.sample()
 
         az.to_netcdf(traza, símismo.archivo_calibs(país))
+        símismo.recalibrado = True
 
     def dibujar(símismo, recalibrar=False):
         símismo.dibujar_traza(recalibrar)
