@@ -47,6 +47,7 @@ Honduras = Geografía(
     traslado_nombres={
         "Atlantida": "Atlántida",
         "Cortes": "Cortés",
+        "Islas de La Bahia": "Islas de La Bahía",
         # "Santa Barbara": "",
         "Copan": "Copán",
         "Intibuca": "Intibucá",
