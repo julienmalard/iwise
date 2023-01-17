@@ -52,6 +52,8 @@ class Modelo(object):
         símismo.dibujar_traza(recalibrar)
         símismo.dibujar_caja_bigotes(recalibrar)
 
+        return símismo
+
     def dibujar_traza(símismo, recalibrar=False):
         países = símismo.datos[símismo.config.col_país].unique()
 
@@ -72,8 +74,6 @@ class Modelo(object):
         países = símismo.datos[símismo.config.col_país].unique()
 
         for país in países:
-            traza = símismo.obt_traza(país, recalibrar)
-
             datos_país = símismo.datos.loc[símismo.datos[símismo.config.col_país] == país]
             datos_x = datos_país[símismo.var_x]
             categorías_x = pd.Categorical(datos_x).categories.values.tolist()
@@ -81,11 +81,9 @@ class Modelo(object):
             fig, ejes = plt.subplots(1, 2, figsize=(12, 6))
             fig.subplots_adjust(bottom=0.2)
 
-            categorías = traza.posterior["b_dim_0"].values
-            n_categ = categorías.size
-            traza_por_categoría = pd.DataFrame({
-                categorías_x[c]: traza.posterior["b"].sel({"b_dim_0": c}).values.flatten() for c in categorías
-            })
+            traza_por_categoría = símismo.obt_traza_por_categoría(país, recalibrar)
+            n_categ = len(traza_por_categoría.columns)
+
             # Dibujar distribución
             dibujo_dist = sns.kdeplot(traza_por_categoría, ax=ejes[0])
 
@@ -98,7 +96,7 @@ class Modelo(object):
             # Dibujar caja
             caja = traza_por_categoría.boxplot(ax=ejes[1], grid=False, return_type="dict")
             colores_por_categ = {
-                categorías_x[i]: dibujo_dist.legend_.legendHandles[i].get_color() for i in categorías
+                categorías_x[i]: dibujo_dist.legend_.legendHandles[i].get_color() for i in range(n_categ)
             }
             ejes[1].set(xticklabels=[])
             for categ, color in colores_por_categ.items():
@@ -119,23 +117,25 @@ class Modelo(object):
             símismo.calibrar(país)
         return az.from_netcdf(símismo.archivo_calibs(país))
 
-    def obt_traza_por_categoría(símismo, país: str, recalibrar=False):
+    def obt_traza_por_categoría(símismo, país: str, recalibrar=False) -> pd.DataFrame:
         traza = símismo.obt_traza(país, recalibrar)
+
+        categorías = traza.posterior["b_dim_0"].values
 
         datos_país = símismo.datos.loc[símismo.datos[símismo.config.col_país] == país]
         datos_x = datos_país[símismo.var_x]
         categorías_x = pd.Categorical(datos_x)
-        traza_por_categoría = pd.DataFrame({
+        return pd.DataFrame({
             categorías_x.categories[c]: traza.posterior["b"].sel({"b_dim_0": c}).values.flatten() for c in categorías
         })
 
-    def archivo_calibs(símismo, país: str):
+    def archivo_calibs(símismo, país: str) -> str:
         dir_calibs = path.join(símismo.config.dir_egreso, "calibs")
         if not path.isdir(dir_calibs):
             makedirs(dir_calibs)
         return path.join(dir_calibs, f"{símismo.nombre}-{país}.ncdf")
 
-    def archivo_gráfico(símismo, país: str, tipo: str):
+    def archivo_gráfico(símismo, país: str, tipo: str) -> str:
         dir_gráfico = path.join(símismo.config.dir_egreso, tipo)
         if not path.isdir(dir_gráfico):
             makedirs(dir_gráfico)
