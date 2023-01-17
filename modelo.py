@@ -87,25 +87,21 @@ class Modelo(object):
                 categorías_x[c]: traza.posterior["b"].sel({"b_dim_0": c}).values.flatten() for c in categorías
             })
             # Dibujar distribución
-            dibujo_dist = sns.kdeplot(traza_por_categoría, ax=ejes[0], legend=False)
+            dibujo_dist = sns.kdeplot(traza_por_categoría, ax=ejes[0])
 
             # Ajustar leyenda
-            ejes[0].legend(
-                handles=dibujo_dist.lines,
-                labels=categorías_x,
-                ncols=max(2, math.ceil(n_categ / 3)), bbox_to_anchor=(1.1, -0.17), loc="center"
+            sns.move_legend(
+                dibujo_dist, ncols=max(2, math.ceil(n_categ / 3)), bbox_to_anchor=(1.1, -0.17),
+                loc="center"
             )
 
             # Dibujar caja
             caja = traza_por_categoría.boxplot(ax=ejes[1], grid=False, return_type="dict")
-            colores_por_categ = [
-                (
-                    dibujo_dist.lines[i].get_color(),
-                    dibujo_dist.legend_.texts[i].get_text()
-                ) for i in categorías
-            ]
+            colores_por_categ = {
+                categorías_x[i]: dibujo_dist.legend_.legendHandles[i].get_color() for i in categorías
+            }
             ejes[1].set(xticklabels=[])
-            for color, categ in colores_por_categ:
+            for categ, color in colores_por_categ.items():
                 i = categorías_x.index(categ)
                 for forma in ["boxes", "medians"]:
                     caja[forma][i].set_color(color)
@@ -114,7 +110,7 @@ class Modelo(object):
                     for j in range(2):
                         caja[forma][i * 2 + j].set_color(color)
 
-            fig.suptitle(f"{país}: Probabilidad por {símismo.nombre.lower()}")
+            fig.suptitle(f"{país}: Probabilidad de inseguridad hídrica por {símismo.nombre.lower()}")
             fig.savefig(símismo.archivo_gráfico(país, "caja"))
             plt.close(fig)
 
@@ -132,8 +128,6 @@ class Modelo(object):
         traza_por_categoría = pd.DataFrame({
             categorías_x.categories[c]: traza.posterior["b"].sel({"b_dim_0": c}).values.flatten() for c in categorías
         })
-
-
 
     def archivo_calibs(símismo, país: str):
         dir_calibs = path.join(símismo.config.dir_egreso, "calibs")
@@ -179,5 +173,3 @@ class ModeloRegional(Modelo):
 
     def archivo_gráfico(símismo, país: str, tipo: str):
         return super().archivo_gráfico(país=f"{país}-regional", tipo=tipo)
-
-
