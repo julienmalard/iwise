@@ -47,19 +47,17 @@ Honduras = Geografía(
     traslado_nombres={
         "Atlantida": "Atlántida",
         "Cortes": "Cortés",
-        "Islas de La Bahia": "Islas de La Bahía",
-        # "Santa Barbara": "",
+        "Islas de La Bahia": "Isla de la Bahía",
+        "Santa Barbara": "Santa Bárbara",
         "Copan": "Copán",
         "Intibuca": "Intibucá",
-        # "Francisco Morazan": "",
-        # "El Paraiso": ""
+        "Francisco Morazan": "Francisco Morazán",
+        "El Paraiso": "El Paraíso"
     }
 )
 
 if __name__ == "__main__":
     config = preparar_config()
-
-    # ModeloRegional("Género", var_y=COL_SEGGHÍD, var_x="WP1219", config=config).dibujar()
 
     modelo = Modelo("Región", var_y=COL_SEGGHÍD, var_x=COL_REGIÓN, config=config).dibujar()
     Guatemala.dibujar(modelo, colores=-1)

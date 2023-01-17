@@ -39,15 +39,22 @@ class Geografía(object):
         v_cols = mapa_color(vals_norm)
         v_cols[np.isnan(vals_norm)] = 1
 
-        for rgn, frm in zip(símismo.forma.records(fields=[símismo.columna_región]), símismo.forma.shapes()):
+        def código(r):
+            try:
+                return símismo.traslado_nombres[r]
+            except KeyError:
+                return r
+
+        regiones = [r[símismo.columna_región] for r in símismo.forma.records(fields=[símismo.columna_región])]
+        faltan_en_mapa = [r for r in vals_norm.index.values.tolist() if r not in [código(s) for s in regiones]]
+        if faltan_en_mapa:
+            warnings.warn(f"Faltan las regiones siguientes en el mapa: {faltan_en_mapa}")
+
+        for rgn, frm in zip(regiones, símismo.forma.shapes()):
             puntos = frm.points
             partes = frm.parts
 
-            rgn = rgn[símismo.columna_región]
-            try:
-                rgn_final = símismo.traslado_nombres[rgn]
-            except KeyError:
-                rgn_final = rgn
+            rgn_final = código(rgn)
 
             try:
                 i_rgn = vals_norm.index.values.tolist().index(rgn_final)

@@ -80,17 +80,19 @@ class Modelo(object):
             categorías_x = pd.Categorical(datos_x).categories.values.tolist()
 
             fig, ejes = plt.subplots(1, 2, figsize=(12, 6))
-            fig.subplots_adjust(bottom=0.2)
+            fig.subplots_adjust(bottom=0.25)
 
             traza_por_categoría = símismo.obt_traza_por_categoría(país, recalibrar)
             n_categ = len(traza_por_categoría.columns)
 
             # Dibujar distribución
             dibujo_dist = sns.kdeplot(traza_por_categoría, ax=ejes[0])
+            ejes[0].set_xlabel("Probabilidad de inseguridad hídrica")
+            ejes[0].set_ylabel("Densidad")
 
             # Ajustar leyenda
             sns.move_legend(
-                dibujo_dist, ncols=max(2, math.ceil(n_categ / 3)), bbox_to_anchor=(1.1, -0.17),
+                dibujo_dist, ncols=max(2, math.ceil(n_categ / 3)), bbox_to_anchor=(1.1, -0.23),
                 loc="center"
             )
 
@@ -100,6 +102,8 @@ class Modelo(object):
                 categorías_x[i]: dibujo_dist.legend_.legendHandles[i].get_color() for i in range(n_categ)
             }
             ejes[1].set(xticklabels=[])
+            ejes[1].set_ylabel("Probabilidad de inseguridad hídrica")
+
             for categ, color in colores_por_categ.items():
                 i = categorías_x.index(categ)
                 for forma in ["boxes", "medians"]:
@@ -142,35 +146,3 @@ class Modelo(object):
             makedirs(dir_gráfico)
 
         return path.join(dir_gráfico, f"{símismo.nombre}-{país}.jpg")
-
-
-class ModeloRegional(Modelo):
-
-    def calibrar(símismo, país: str):
-        datos_país = símismo.datos.loc[símismo.datos[símismo.config.col_país] == país]
-        datos_x = datos_país[símismo.var_x]
-        categorías_x = pd.Categorical(datos_x)
-
-        datos_región = datos_país[símismo.config.col_región]
-        regiones = pd.Categorical(datos_región)
-
-        with pm.Model():
-            a_país = pm.Normal(name="a_país", shape=categorías_x.categories.size)
-            a = pm.Normal(name="a", mu=a_país, shape=(regiones.categories.size, categorías_x.categories.size))
-
-            índices_a = categorías_x.codes
-            índices_región = regiones.codes
-            pm.Bernoulli(logit_p=a[índices_región, índices_a], name="prob", observed=datos_país[símismo.var_y])
-
-            b = pm.Deterministic("b_por_género", pm.math.invlogit(a))
-            pm.Deterministic("b", b[..., 1] - b[..., 0])
-
-            traza = pm.sample()
-
-        az.to_netcdf(traza, símismo.archivo_calibs(país))
-
-    def archivo_calibs(símismo, país: str):
-        return super().archivo_calibs(país=f"{país}-regional")
-
-    def archivo_gráfico(símismo, país: str, tipo: str):
-        return super().archivo_gráfico(país=f"{país}-regional", tipo=tipo)
