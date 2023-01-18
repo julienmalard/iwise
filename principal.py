@@ -31,7 +31,7 @@ def preparar_config():
     datos_pd = preparar_datos()
     return ConfigDatos(datos_pd, dir_egreso=DIR_EGRESO, col_país=COL_PAÍS, col_región=COL_REGIÓN)
 
-
+# Mapa IARNA
 Guatemala = Geografía(
     os.path.join("geografía", "mapas", "guatemala", "departamentos_gtm_fin"),
     país="Guatemala",
@@ -56,10 +56,22 @@ Honduras = Geografía(
     }
 )
 
+Brazil = Geografía(
+    os.path.join("geografía", "mapas", "brazil", "bra_admbnda_adm1_ibge_2020"),
+    país="Brazil",
+    columna_región="ADM1_PT",
+    traslado_nombres={
+        "Espírito Santo": "Espirito Santo",
+        "Rondônia": "Rondonia"
+    }
+)
+
+
 if __name__ == "__main__":
     config = preparar_config()
 
     modelo = Modelo("Región", var_y=COL_SEGGHÍD, var_x=COL_REGIÓN, config=config).dibujar()
+    Brazil.dibujar(modelo, colores=-1)
     Guatemala.dibujar(modelo, colores=-1)
     Honduras.dibujar(modelo, colores=-1)
 

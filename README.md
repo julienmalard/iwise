@@ -9,3 +9,6 @@ librerías necesarias:
 
 ## Utilización
 Ejecutar el programa `principal.py` para generar los resultados.
+
+## Licencias
+Mapas de Brazil y Honduras de OCHA Regional Office for Latin America and the Caribbean (ROLAC) bajo licencia CC BY sobre  HDX (https://data.humdata.org).

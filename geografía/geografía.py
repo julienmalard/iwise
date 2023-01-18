@@ -15,18 +15,22 @@ class Geografía(object):
         símismo.columna_región = columna_región
         símismo.traslado_nombres = traslado_nombres or {}
 
-    def dibujar(símismo, modelo: Modelo, colores=None, llenar=True, alpha=1):
+    def dibujar(símismo, modelo: Modelo, colores=None, llenar=True):
         fig, eje = plt.subplots(1, 1, figsize=(8, 6))
         eje.set_aspect('equal', 'box')
 
         traza = modelo.obt_traza_por_categoría(símismo.país)
         vals_por_región = traza.mean()
+        desv_típ_por_región = traza.std()
 
         escala = (min(vals_por_región), max(vals_por_región))
         if escala[0] == escala[1]:
             escala = (escala[0] - 0.5, escala[0] + 0.5)
 
         vals_norm = (vals_por_región - escala[0]) / (escala[1] - escala[0])
+        desv_típ_norm = (desv_típ_por_región - min(desv_típ_por_región)) / (
+                max(desv_típ_por_región) - min(desv_típ_por_región)
+        )
 
         escala_colores = símismo._resolver_colores(colores)
         d_clrs = _gen_d_mapacolores(colores=escala_colores)
@@ -76,11 +80,14 @@ class Geografía(object):
                     x_lon[j] = seg[j][0]
                     y_lat[j] = seg[j][1]
 
-                clr = v_cols[i_rgn] if isinstance(v_cols, np.ndarray) else v_cols
+                clr = v_cols[i_rgn]
+                alpha = (1 - desv_típ_norm[i_rgn]) / 2 + 0.5
                 if llenar:
                     eje.fill(x_lon, y_lat, color=clr, alpha=alpha)
                 else:
                     eje.plot(x_lon, y_lat, color=clr, alpha=alpha)
+
+        fig.suptitle("Probabilidad de inseguridad hídrica")
         fig.colorbar(cpick, ax=eje)
         fig.savefig(modelo.archivo_gráfico(país=símismo.país, tipo="geog"))
 
